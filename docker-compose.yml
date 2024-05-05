@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  resource:
+    build: ./resource
+    restart: unless-stopped
+    env_file: ./resource/.env
+    ports:
+      - 8080:8080
+    environment:
+      - PORT=${PORT}
+      - LOCAL_HOST=${LOCAL_HOST}
+      - DB_HOST=${DB_HOST}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - DB_PORT=${DB_PORT}
+    stdin_open: true
+    tty: true
+  security:
+    build: ./security
+    restart: unless-stopped
+    env_file: ./security/.env
+    ports:
+      - 8081:8081
+    environment:
+      - PORT_SECURITY_SERVER=${PORT_SECURITY_SERVER}
+      - LOCAL_HOST=${LOCAL_HOST}
+      - DB_HOST=${DB_HOST}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - DB_PORT=${DB_PORT}
+    stdin_open: true
+    tty: true
+    
+    
+    
+
