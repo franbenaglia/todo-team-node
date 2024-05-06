@@ -239,7 +239,75 @@ const getFullUser = async (req, res) => {
 
 }
 
+const getTasksByState = async (req, res) => {
+    try {
+        const { state, user } = req.params;
+        const query1 = 'SELECT id FROM _users WHERE name = $1;';
+        const { rows1 } = await pool.query(query1, [user]);
+        const user_id = rows1; //rows1.row[0].id
+        const query2 = 'SELECT * FROM tasks WHERE state = $1 AND user_id = $2;';
+        const { rows2 } = await pool.query(query2, [state, user_id]);
+        res.status(200).json(rows2);
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('failed');
+    }
+};
 
+const changeState = async (req, res) => {
+    try {
+        const { id, state } = req.params;
+
+        const query = `
+       UPDATE tasks
+       SET state = COALESCE($1, state)
+       WHERE id = $2
+       RETURNING *;
+     `;
+        const { rows } = await pool.query(query, [state, id]);
+
+        if (rows.length === 0) {
+            return res.status(404).send('Cannot find anything');
+        }
+
+        res.status(200).json(true);
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Some error has occured failed');
+    }
+};
+
+const changeUser = async (req, res) => {
+    try {
+        const { id, user } = req.params;
+
+        const query1 = 'SELECT id FROM _users WHERE name = $1;';
+        const { rows1 } = await pool.query(query1, [user]);
+
+        if (rows1.length === 0) {
+            return res.status(404).send('Cannot find the user');
+        }
+
+        const user_id = rows1; // rows1.row[0].id
+
+        const query2 = `
+       UPDATE tasks
+       SET user_id = COALESCE($1, user_id)
+       WHERE id = $2
+       RETURNING *;
+     `;
+        const { rows2 } = await pool.query(query2, [user_id, id]);
+
+        if (rows2.length === 0) {
+            return res.status(404).send('Cannot find anything');
+        }
+
+        res.status(200).json(true);
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Some error has occured failed');
+    }
+};
 
 module.exports = {
     status,
@@ -251,5 +319,8 @@ module.exports = {
     getTasksPaginated,
     updateTask,
     taskDelete,
-    getFullUser
+    getFullUser,
+    changeState,
+    changeUser,
+    getTasksByState,
 }

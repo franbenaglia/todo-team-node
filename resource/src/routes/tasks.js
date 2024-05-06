@@ -12,7 +12,10 @@ const {
     getTasksPaginated,
     getFullUser,
     updateTask,
-    taskDelete
+    taskDelete,
+    changeState,
+    changeUser,
+    getTasksByState,
 } = require('../controllers/tasks.js');
 
 router.get('/status', status);
@@ -35,5 +38,11 @@ router.put('/task', verifyToken, updateTask);
 router.delete('/task/:id', verifyToken, taskDelete);
 
 router.get('/fullUser', verifyToken, getFullUser);
+
+router.put('/changeStateTask/:id/:state', verifyToken, changeState);
+
+router.put('/changeUserTask/:id/:user', verifyToken, changeUser);
+
+router.get('/tasksByState/:state/:user', verifyToken, getTasksByState);
 
 module.exports = router;
