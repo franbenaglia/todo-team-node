@@ -16,6 +16,7 @@ const {
     changeState,
     changeUser,
     getTasksByState,
+    getAllUsers,
 } = require('../controllers/tasks.js');
 
 router.get('/status', status);
@@ -38,6 +39,8 @@ router.put('/task', verifyToken, updateTask);
 router.delete('/task/:id', verifyToken, taskDelete);
 
 router.get('/fullUser', verifyToken, getFullUser);
+
+router.get('/allUsers', verifyToken, getAllUsers);
 
 router.put('/changeStateTask/:id/:state', verifyToken, changeState);
 

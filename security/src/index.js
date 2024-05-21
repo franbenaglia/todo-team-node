@@ -36,7 +36,7 @@ app.listen(PORT, () => {
 
 app.use('/auth', registerLogin);
 
-app.use('/userFullData', datosUsuario);//    /userFullData/datos/:username
+app.use('/userFullData', datosUsuario); 
 
 client.start((error) => {
     console.log(error || 'complete');

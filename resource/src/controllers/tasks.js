@@ -32,7 +32,7 @@ const status = (request, response) => {
 
 const postTask = async (req, res) => {
 
-    const { title, dir, description } = req.body;
+    const { title, dir, description, user } = req.body;
 
     if (!title || !dir || !description) {
         return res.status(400).send('One of the dir, or title, or description is missing in the data');
@@ -43,12 +43,13 @@ const postTask = async (req, res) => {
         const queryTaskSequence = "select nextval('tasks_seq');";
         const newTaskId = await pool.query(queryTaskSequence);
         const insertTask = `
-        INSERT INTO tasks (title, dir, description,id)
-        VALUES ($1, $2, $3, $4)
+        INSERT INTO tasks (title, dir, description,id, user_id)
+        VALUES ($1, $2, $3, $4, $5)
         RETURNING id;
         `;
         const taskId = newTaskId.rows[0].nextval;
-        const taskValues = [title, dir, description, taskId];
+        const userId = user.id;
+        const taskValues = [title, dir, description, taskId, userId];
         const task = await pool.query(insertTask, taskValues);
 
         res.status(200).send({ message: 'New Task created', id: task.rows[0].id });
@@ -130,14 +131,18 @@ const getTasksPaginated = async (req, res) => {
 const getTaskById = async (req, res) => {
     try {
         const { id } = req.params;
-        const query = 'SELECT * FROM tasks WHERE id = $1;';
+        const query = 'SELECT t.*, u.* FROM tasks t left join _users u on t.user_id=u.id WHERE t.id = $1;';
         const { rows } = await pool.query(query, [id]);
 
         if (rows.length === 0) {
             return res.status(404).send('this task is not in the database');
         }
 
-        res.status(200).json(rows[0]);
+        
+       const response = { dir: rows[0].dir, description: rows[0].description, title: rows[0].title, state: rows[0].state,
+       user: {id: rows[0].user_id, name: rows[0].name} }
+
+        res.status(200).json(response);
     } catch (err) {
         console.error(err);
         res.status(500).send('failed');
@@ -164,8 +169,7 @@ const getTaskImageById = async (req, res) => {
 
 const updateTask = async (req, res) => {
     try {
-        //const { id } = req.params;
-        const { id, title, dir, description } = req.body;
+        const { id, title, dir, description, state } = req.body;
 
         if (!title && !dir && !description) {
             return res.status(400).send('provide a field (title, dir, or description)');
@@ -175,11 +179,12 @@ const updateTask = async (req, res) => {
        UPDATE tasks
        SET title = COALESCE($1, title),
            dir = COALESCE($2, dir),
-           description = COALESCE($3, description)
-       WHERE id = $4
+           description = COALESCE($3, description),
+           state = COALESCE($4, state)
+       WHERE id = $5
        RETURNING *;
      `;
-        const { rows } = await pool.query(query, [title, dir, description, id]);
+        const { rows } = await pool.query(query, [title, dir, description, state, id]);
 
         if (rows.length === 0) {
             return res.status(404).send('Cannot find anything');
@@ -239,15 +244,42 @@ const getFullUser = async (req, res) => {
 
 }
 
+const getAllUsers = async (req, res) => {
+
+    try {
+
+        let ports = getPorts();
+
+        const { data } = await axios({
+            url: 'http://' + LOCAL_HOST + ':' + ports[0] + '/userFullData/allUsers',
+            method: 'get',
+            params: {
+            },
+        });
+
+        console.log(data);
+
+        res.status(200).json(data);
+
+    } catch (error) {
+
+        console.log(error);
+
+    }
+
+    return "";
+
+}
+
 const getTasksByState = async (req, res) => {
     try {
         const { state, user } = req.params;
+
         const query1 = 'SELECT id FROM _users WHERE name = $1;';
-        const { rows1 } = await pool.query(query1, [user]);
-        const user_id = rows1; //rows1.row[0].id
-        const query2 = 'SELECT * FROM tasks WHERE state = $1 AND user_id = $2;';
-        const { rows2 } = await pool.query(query2, [state, user_id]);
-        res.status(200).json(rows2);
+        const { rows: userid } = await pool.query(query1, [user]);
+        const query2 = 'SELECT * FROM tasks WHERE state = $1 AND user_id = $2 ORDER BY id;';
+        const { rows: tasks } = await pool.query(query2, [state, userid[0].id]);
+        res.status(200).json(tasks);
     } catch (err) {
         console.error(err);
         res.status(500).send('failed');
@@ -323,4 +355,5 @@ module.exports = {
     changeState,
     changeUser,
     getTasksByState,
+    getAllUsers
 }

@@ -33,4 +33,23 @@ router.get('/datos/:username',async (req, res) => {
     }
 });
 
+router.get('/allUsers',async (req, res) => {
+    
+    try {
+
+        const query = 'SELECT * FROM _users;';
+        
+        const { rows } = await pool.query(query);
+        
+        for(let i=0; i<rows.length;i++){
+             delete rows[i].password;
+        }
+
+        res.status(200).json(rows);
+
+    } catch (error) {
+        res.status(500).json({ error: 'Operation failed' });
+    }
+});
+
 module.exports = router;
