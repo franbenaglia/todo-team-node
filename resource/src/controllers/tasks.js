@@ -2,6 +2,7 @@ require('dotenv').config();
 const { Pool } = require('pg');
 const uuid = require('uuid');
 const fs = require('fs');
+const path = require('path');
 const { getPorts } = require('../eureka/eureka-client.js');
 const axios = require('axios');
 const { jwtDecode } = require("jwt-decode");
@@ -32,7 +33,7 @@ const status = (request, response) => {
 
 const postTask = async (req, res) => {
 
-    const { title, dir, description, user } = req.body;
+    const { title, dir, description, user, state } = req.body;
 
     if (!title || !dir || !description) {
         return res.status(400).send('One of the dir, or title, or description is missing in the data');
@@ -43,13 +44,14 @@ const postTask = async (req, res) => {
         const queryTaskSequence = "select nextval('tasks_seq');";
         const newTaskId = await pool.query(queryTaskSequence);
         const insertTask = `
-        INSERT INTO tasks (title, dir, description,id, user_id)
-        VALUES ($1, $2, $3, $4, $5)
+        INSERT INTO tasks (title, dir, description,id, user_id, state)
+        VALUES ($1, $2, $3, $4, $5, $6)
         RETURNING id;
         `;
         const taskId = newTaskId.rows[0].nextval;
         const userId = user.id;
-        const taskValues = [title, dir, description, taskId, userId];
+        const taskValues = [title, dir, description, taskId, userId, state];
+        console.log('the state ' + state);
         const task = await pool.query(insertTask, taskValues);
 
         res.status(200).send({ message: 'New Task created', id: task.rows[0].id });
@@ -64,6 +66,45 @@ const postTask = async (req, res) => {
 //con un campo inagen bytea, el de la base creada por mi es oid
 const postImage = async (req, res) => {
 
+    const { id } = req.body;
+
+    console.log(req.thefile);
+
+    //const files = req.files;
+
+    if (!req.thefile) {
+        return res.status(400).send('No files or images');
+    }
+
+    try {
+
+        const uuidIden = uuid.v4();
+        const ext = path.extname(req.thefile.originalname);
+        const dataImagePrefix = 'data:' + 'image/png' + ';base64,';
+
+        const insertFile = `
+          INSERT INTO files (id_task, data, file_name, file_type, id, file_size)
+          VALUES ($1, $2, $3, $4, $5, $6)
+          RETURNING id;
+         `;
+
+        const dataAsBuffer = fs.readFileSync('uploads/' + req.thefile.originalname);
+
+        //const dataAsBuffer64 = fs.readFileSync('uploads/' + req.thefile.originalname, { encoding: 'base64' }); 
+        //const dataAsBase64 = dataImagePrefix + dataAsBuffer64; //dataAsBuffer.toString('base64');
+        const fileValues = [id, dataAsBuffer, req.thefile.originalname, ext, uuidIden, req.thefile.size];
+        const file = await pool.query(insertFile, fileValues);
+
+        res.status(200).send({ message: 'New File created', uuidIden: uuidIden });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('some error has occured');
+    }
+};
+
+
+const putImage = async (req, res) => {
+
     const { avatar, id } = req.body;
 
     const files = req.files;
@@ -73,6 +114,13 @@ const postImage = async (req, res) => {
     }
 
     try {
+
+        const query = 'DELETE FROM files WHERE id_task = $1 RETURNING *;';
+        const { rows } = await pool.query(query, [id]);
+
+        if (rows.length === 0) {
+            console.log('Not previous image for delete');
+        }
 
         const uuidIden = uuid.v4();
         const dataImagePrefix = 'data:' + files.avatar.type + ';base64, ';
@@ -97,7 +145,6 @@ const postImage = async (req, res) => {
         res.status(500).send('some error has occured');
     }
 };
-
 
 
 const getAllTasks = async (req, res) => {
@@ -128,6 +175,23 @@ const getTasksPaginated = async (req, res) => {
     }
 };
 
+const getTasksPaginatedAndOrderBy = async (req, res) => {
+    try {
+        const { pageNumber, pageSize, order, direction } = req.params;
+        const offset = (pageNumber * pageSize) + 1;
+        const query = 'SELECT * FROM tasks ORDER BY ' + order + ' ' + direction + ' LIMIT '
+            + pageSize + ' OFFSET ' + offset + ';';
+        const queryT = 'SELECT * FROM tasks;';
+        const { rows } = await pool.query(query);
+        const rowsc = await pool.query(queryT);
+        const taskResponse = { tasks: rows, totalRecords: rowsc.rowCount };
+        res.status(200).json(taskResponse);
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('failed');
+    }
+};
+
 const getTaskById = async (req, res) => {
     try {
         const { id } = req.params;
@@ -138,9 +202,10 @@ const getTaskById = async (req, res) => {
             return res.status(404).send('this task is not in the database');
         }
 
-        
-       const response = { dir: rows[0].dir, description: rows[0].description, title: rows[0].title, state: rows[0].state,
-       user: {id: rows[0].user_id, name: rows[0].name} }
+        const response = {
+            id: id, dir: rows[0].dir, description: rows[0].description, title: rows[0].title, state: rows[0].state,
+            user: { id: rows[0].user_id, name: rows[0].name }
+        }
 
         res.status(200).json(response);
     } catch (err) {
@@ -159,6 +224,8 @@ const getTaskImageById = async (req, res) => {
             return res.status(404).send('this file or image is not in the database');
         }
         res.setHeader('content-type', 'image/png');
+        console.log('data image');
+        console.log(rows[0].data);
         res.send(rows[0].data);
         //res.status(200).json(rows[0]);
     } catch (err) {
@@ -345,10 +412,12 @@ module.exports = {
     status,
     postTask,
     postImage,
+    putImage,
     getAllTasks,
     getTaskById,
     getTaskImageById,
     getTasksPaginated,
+    getTasksPaginatedAndOrderBy,
     updateTask,
     taskDelete,
     getFullUser,

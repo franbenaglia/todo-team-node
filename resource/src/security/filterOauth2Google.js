@@ -9,7 +9,10 @@ function verifyGoogleToken(req, res, next) {
     const token = header.split(" ")[1];
     
     try {
+
+        //console.log(req);
         //throw new Error('google token verify not implemented');
+        //if(req.indexOf('googleapis'))
         next();
     } catch (error) {
         console.log('Invalid google token');

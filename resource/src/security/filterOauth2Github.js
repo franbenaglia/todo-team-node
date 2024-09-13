@@ -8,6 +8,8 @@ function verifyGithubToken(req, res, next) {
     
     try {
         throw new Error('github token verify not implemented');
+         //ver consulta a resources de github si devuelve error sacar de pila
+        //marcar como login google en front
         next();
     } catch (error) {
         console.log('Invalid github token');

@@ -16,7 +16,9 @@ function verifyToken(req, res, next) {
         req.userId = decoded.userId;
         next();
     } catch (error) {
-        console.log('Invalid jwt token');
+        console.log('Invalid jwt token'); 
+        //TODO setear en req en front valor indicando que es login jwt y 
+        //si lo es salir de la cadena. podria ser cookie 
         verifyGoogleToken(req, res, next);
     }
 };

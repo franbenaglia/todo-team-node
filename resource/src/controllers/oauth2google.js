@@ -49,7 +49,7 @@ const getGoogleUserInfo = async (req, res) => {
         },
     });
 
-    console.log(data);
+    //console.log(data);
 
     res.json({ name: data.email, username: data.name, role: 'ADMINISTRATOR' }); 
 

@@ -24,20 +24,23 @@ const pool = new Pool({
 router.post('/register', async (req, res) => {
     try {
         const { userName, password } = req.body;
+        const name = userName;
+        const roles = '["ROLE_CUSTOMER"]';
         const hashedPassword = await bcrypt.hash(password, 10); //deault strength 10 backspring
         const querySequence = "select nextval('_users_seq');";
         const query = `
-        INSERT INTO _users (id, username, password)
-        VALUES ($1, $2, $3)
+        INSERT INTO _users (id, username, password, name, roles)
+        VALUES ($1, $2, $3, $4, $5)
         RETURNING id;
       `;
          
          const newId = await pool.query(querySequence);
-         const values = [newId.rows[0].nextval, userName, hashedPassword];
+         const values = [newId.rows[0].nextval, userName, hashedPassword, name, roles];
          const result = await pool.query(query, values);
         
         res.status(201).json({ message: 'User registered successfully' });
     } catch (error) {
+        console.log(error);
         res.status(500).json({ error: 'Registration failed' });
     }
 });
