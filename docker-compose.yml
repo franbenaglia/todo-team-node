@@ -1,38 +1,31 @@
-version: '3.8'
 
 services:
-  resource:
+
+  #servicio-eureka-server-node:
+   # image: eureka
+   # container_name: servicio-eureka-server-node
+   # ports:
+   #   - 8761:8761
+  todo-team-resource:
     build: ./resource
     restart: unless-stopped
-    env_file: ./resource/.env
     ports:
       - 8080:8080
-    environment:
-      - PORT=${PORT}
-      - LOCAL_HOST=${LOCAL_HOST}
-      - DB_HOST=${DB_HOST}
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=${DB_NAME}
-      - DB_PORT=${DB_PORT}
     stdin_open: true
     tty: true
-  security:
+  todo-team-security:
     build: ./security
     restart: unless-stopped
-    env_file: ./security/.env
     ports:
       - 8081:8081
-    environment:
-      - PORT_SECURITY_SERVER=${PORT_SECURITY_SERVER}
-      - LOCAL_HOST=${LOCAL_HOST}
-      - DB_HOST=${DB_HOST}
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=${DB_NAME}
-      - DB_PORT=${DB_PORT}
     stdin_open: true
     tty: true
+  todoteam-node:
+    image: todoteam
+    container_name: todoteam-node
+    ports:
+      - 4200:4200
+    restart: on-failure:10
     
     
     

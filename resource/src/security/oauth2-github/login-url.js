@@ -6,7 +6,7 @@ const LOCAL_HOST = process.env.LOCAL_HOST || 'localhost';
 
 const params = queryString.stringify({
   client_id: process.env.GITHUB_CLIENT_ID || GITHUB_CLIENT_ID,
-  redirect_uri: 'http://' + LOCAL_HOST + ':4200',
+  redirect_uri: 'http://' + 'localhost' + ':4200',
   scope: ['read:user', 'user:email'].join(' '),
   allow_signup: true,
 });

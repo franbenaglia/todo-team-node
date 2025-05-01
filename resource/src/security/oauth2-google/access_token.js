@@ -10,7 +10,7 @@ const getAccessTokenFromCode = async (code) => {
         data: {
             client_id: process.env.GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID,
             client_secret: process.env.GOOGLE_CLIENT_SECRET || GOOGLE_CLIENT_SECRET,
-            redirect_uri: 'http://' + LOCAL_HOST + ':4200',
+            redirect_uri: 'http://' + 'localhost' + ':4200',
             grant_type: 'authorization_code',
             code,
         },

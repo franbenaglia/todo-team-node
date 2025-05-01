@@ -6,7 +6,7 @@ const LOCAL_HOST = process.env.LOCAL_HOST || 'localhost';
 
 const stringifiedParams = queryString.stringify({
   client_id: process.env.GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID,
-  redirect_uri: 'http://' + LOCAL_HOST + ':4200',
+  redirect_uri: 'http://' + 'localhost' + ':4200',
   scope: [
     'https://www.googleapis.com/auth/userinfo.email',
     'https://www.googleapis.com/auth/userinfo.profile',

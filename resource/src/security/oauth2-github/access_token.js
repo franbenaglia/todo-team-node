@@ -11,7 +11,7 @@ const getAccessTokenFromCode = async (code) => {
         params: {
             client_id: process.env.GITHUB_CLIENT_ID || GITHUB_CLIENT_ID,
             client_secret: process.env.GITHUB_CLIENT_SECRET || GITHUB_CLIENT_SECRET,
-            redirect_uri: 'http://' + LOCAL_HOST + ':4200',
+            redirect_uri: 'http://' + 'localhost' + ':4200',
             code,
         },
     });
